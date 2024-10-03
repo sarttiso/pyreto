@@ -96,7 +96,7 @@ class FitParetoTemp:
 
         k = len(cur_X)
 
-
+        # solve equations 2.4, 2.5 for alpha and beta
         sol = root(self.meerschaert_eqns, [0.5, 1], args=(dx, cur_X))
         alpha = sol.x[0]
         beta = sol.x[1]
@@ -149,6 +149,20 @@ def pareto_trunc_cdf(x, gamma, alpha, nu):
     P[x < gamma] = 0
     return P
 
+def pareto_temp_survival(x, alpha, beta, gamma):
+    """survival function for tempered Pareto   
+
+    Args:
+        x (_type_): _description_
+        alpha (_type_): _description_
+        beta (_type_): _description_
+        gamma (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    return gamma*x**(-alpha)*np.exp(-beta*x)
+
 # inverse transform stampling
 def pareto_trunc_sample(n, gamma, alpha, nu):
     """_summary_
@@ -170,3 +184,25 @@ def pareto_trunc_sample(n, gamma, alpha, nu):
     # transform to truncated pareto
     samp = np.interp(r, P, x)
     return samp
+
+def pareto_test(X):
+    """p-value for Pareto distribution fit
+
+    This is a test for the Pareto distribution. The null hypothesis is that the data is Pareto distributed. Small p-values indicate that the data are likely not Pareto distributed.
+
+    Args:
+        X (arraylike): data to test
+
+    Returns:
+        float: p-value 
+    """
+    # from Aban et al. 2006 pg. 272
+    # sort descending order
+    X = np.sort(X)[::-1]
+    # number of samples
+    n = len(X)
+    # Hill's estimator for alpha
+    alpha_hat = 1/(1/n * np.sum(np.log(X[0:n]) - np.log(X[-1])))
+    c_hat = (X[-1])**alpha_hat
+    p = np.exp(-n * c_hat * X[0]**(-alpha_hat))
+    return p
